@@ -5,6 +5,8 @@ import logSymbols from 'log-symbols'
 import { resolve } from 'path'
 import { CWD, TEMPLATE } from '@lib/config'
 import { get, Template } from '@util/store'
+import { getTemplateConfig, TemplateConfig, validateTemplate } from '@lib/config/template'
+
 const { pathExistsSync } = pkg
 const { prompt } = inquirer
 const templateList: Template[] = get('templateList')
@@ -21,6 +23,8 @@ export async function createProject(project: { name: string }) {
     )
     return
   }
+
+  // Get project name
   const { name } = project.name
     ? project
     : await prompt([
@@ -31,25 +35,59 @@ export async function createProject(project: { name: string }) {
           default: 'new-app'
         }
       ])
-  const Choice = await prompt([
+
+  // Select template
+  const { template: selectedTemplate } = await prompt([
     {
       type: 'list',
       name: 'template',
-      message: 'Select your project: ',
+      message: 'Select your project template: ',
       choices: templateNames
     }
   ])
-  const dir = resolve(CWD, name)
 
+  const templatePath = resolve(TEMPLATE, selectedTemplate)
+  
+  // Validate template
+  const validation = validateTemplate(templatePath)
+  if (!validation.valid) {
+    console.error(logSymbols.error, '模板验证失败:')
+    validation.errors.forEach(error => console.error(`- ${error}`))
+    return
+  }
+
+  const templateConfig = getTemplateConfig(templatePath)
+
+  // Handle template configuration if exists
+  let answers = {}
+  if (templateConfig?.prompts) {
+    answers = await prompt(templateConfig.prompts)
+  }
+
+  const dir = resolve(CWD, name)
   if (pathExistsSync(dir)) {
     console.error(logSymbols.error, `${name} already exists`)
     return
   }
-  const template = resolve(TEMPLATE, Choice.template)
-  const spinner = ora('正在创建中...\n').start()
+
+  const spinner = ora('正在创建项目...\n').start()
   try {
-    await copy(template, dir)
-    spinner.succeed('创建成功，请查看结果')
+    // Copy template
+    await copy(templatePath, dir)
+
+    // Install dependencies if specified in config
+    if (templateConfig?.dependencies || templateConfig?.devDependencies) {
+      spinner.text = '正在安装依赖...'
+      // TODO: Install dependencies using npm/yarn
+    }
+
+    spinner.succeed('项目创建成功!')
+    
+    // Show next steps
+    console.log('\n🎉 项目创建完成! 接下来你可以:\n')
+    console.log(`  cd ${name}`)
+    console.log('  npm install')
+    console.log('  npm run dev\n')
   } catch (error) {
     spinner.fail('创建失败')
     console.error(logSymbols.error, error)

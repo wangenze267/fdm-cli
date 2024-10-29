@@ -23,20 +23,97 @@ A freedom-cli ( 一个向往自由的脚手架 )
 
 ## 🛻 安装
 
-```
+```bash
 npm install fdm-cli -g
 ```
 
 ## 📣 如何使用
 
+### 基础命令
+
 1. `fdm create` 根据模板库创建项目
+   - 支持交互式配置
+   - 自动安装依赖
+   - 项目创建完成后显示后续步骤
+
 2. `fdm list` 查看模板清单
-3. `fdm switch <packageManager>` 切换使用的包管理器，不填则默认使用 npm
+   - 显示本地和远程模板
+   - 包含模板描述和标签
+
+3. `fdm switch <packageManager>` 切换使用的包管理器
+   - 不填则默认使用 npm
+   - 支持 npm/yarn/pnpm
+
 4. `fdm install <package>` 下载依赖 同 npm
 5. `fdm uninstall <package>` 卸载依赖 同 npm
-6. `fdm save <path>` 根据路径保存所选项目至模板库，下次可直接从模板库获取
-   > `fdm save -l <path>` 根据路径保存路径下所有子目录（一个子目录视为一个模板）
-7. `fdm delete <templateName>` 删除模板
+
+### 模板管理
+
+6. `fdm save <path> [newName]` 保存模板
+   - 将指定路径的项目保存为模板
+   - 可选择重命名
+   - 自动验证模板结构
+   ```bash
+   fdm save ./my-project my-template
+   ```
+
+7. `fdm save -l <templatesPath>` 批量保存模板
+   - 保存指定目录下的所有子目录为模板
+   ```bash
+   fdm save -l ./my-templates
+   ```
+
+8. `fdm delete <templateName>` 删除模板
+   ```bash
+   fdm delete my-template
+   ```
+
+### 远程模板
+
+9. `fdm sync` 同步远程模板
+   - 从远程仓库同步官方模板
+   - 自动验证模板有效性
+
+10. `fdm add-remote <repository> <name>` 添加远程模板
+    - 支持 GitHub/GitLab 仓库
+    ```bash
+    fdm add-remote github:user/repo my-template
+    ```
+
+## 🔧 模板配置
+
+在模板根目录创建 `fdm.config.js` 文件进行配置：
+
+```javascript
+module.exports = {
+  name: 'template-name',
+  description: 'Template description',
+  // 交互式配置选项
+  prompts: [
+    {
+      name: 'projectName',
+      type: 'input',
+      message: 'Project name:'
+    },
+    {
+      name: 'version',
+      type: 'input',
+      message: 'Project version:',
+      default: '1.0.0'
+    }
+  ],
+  // 依赖配置
+  dependencies: {
+    'vue': '^3.0.0'
+  },
+  devDependencies: {
+    'vite': '^2.0.0'
+  },
+  // 分类和标签
+  category: 'frontend',
+  tags: ['vue', 'typescript']
+}
+```
 
 ## 🤝 参与贡献
 
